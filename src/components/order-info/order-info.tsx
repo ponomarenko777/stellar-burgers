@@ -1,26 +1,51 @@
 import { FC, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
-import { TIngredient } from '@utils-types';
+
+import type { TIngredient, TOrder } from '@utils-types';
+import { useSelector } from '../../services/store';
+import type { RootState } from '../../services/store';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const params = useParams();
+  const orderNumber = Number(params.number);
 
-  const ingredients: TIngredient[] = [];
+  // ✅ ингредиенты из стора
+  const ingredients: TIngredient[] = useSelector(
+    (state: RootState) => state.ingredients.items
+  );
 
-  /* Готовим данные для отображения */
+  // ✅ заказы из ленты
+  const feedOrders: TOrder[] = useSelector(
+    (state: RootState) => state.feeds.orders
+  );
+
+  // ✅ заказы из профиля (ты уже сделал slice profileOrders)
+  const profileOrders: TOrder[] = useSelector(
+    (state: RootState) => state.profileOrders.orders
+  );
+
+  // ✅ находим нужный заказ
+  const orderData = useMemo(() => {
+    if (!orderNumber) return null;
+
+    return (
+      feedOrders.find((o) => o.number === orderNumber) ||
+      profileOrders.find((o) => o.number === orderNumber) ||
+      null
+    );
+  }, [orderNumber, feedOrders, profileOrders]);
+
+  // если заказа нет в сторе — показываем загрузку
+  // (в идеале тут надо догружать по номеру через API, но пока ок)
+  if (!orderData) {
+    return <Preloader />;
+  }
+
+  // ✅ готовим данные для UI
   const orderInfo = useMemo(() => {
-    if (!orderData || !ingredients.length) return null;
-
     const date = new Date(orderData.createdAt);
 
     type TIngredientsWithCount = {
@@ -28,17 +53,14 @@ export const OrderInfo: FC = () => {
     };
 
     const ingredientsInfo = orderData.ingredients.reduce(
-      (acc: TIngredientsWithCount, item) => {
-        if (!acc[item]) {
-          const ingredient = ingredients.find((ing) => ing._id === item);
-          if (ingredient) {
-            acc[item] = {
-              ...ingredient,
-              count: 1
-            };
-          }
+      (acc: TIngredientsWithCount, id) => {
+        const ingredient = ingredients.find((ing) => ing._id === id);
+        if (!ingredient) return acc;
+
+        if (!acc[id]) {
+          acc[id] = { ...ingredient, count: 1 };
         } else {
-          acc[item].count++;
+          acc[id].count += 1;
         }
 
         return acc;
@@ -59,7 +81,9 @@ export const OrderInfo: FC = () => {
     };
   }, [orderData, ingredients]);
 
-  if (!orderInfo) {
+  // ✅ если ингредиенты ещё не пришли — показываем прелоадер,
+  // но НЕ возвращаем orderInfo=null из-за "ingredients.length"
+  if (!ingredients.length) {
     return <Preloader />;
   }
 

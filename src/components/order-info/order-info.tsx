@@ -1,33 +1,35 @@
-import { FC, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { FC, useEffect, useMemo } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
 
 import type { TIngredient, TOrder } from '@utils-types';
-import { useSelector } from '../../services/store';
+import { useDispatch, useSelector } from '../../services/store';
 import type { RootState } from '../../services/store';
 
-export const OrderInfo: FC = () => {
-  const params = useParams();
-  const orderNumber = Number(params.number);
+import { fetchFeedsThunk } from '@slices/feedsSlice';
+import { fetchProfileOrdersThunk } from '@slices/profileOrdersSlice';
 
-  // ✅ ингредиенты из стора
+export const OrderInfo: FC = () => {
+  const { number } = useParams();
+  const orderNumber = Number(number);
+
+  const location = useLocation();
+  const dispatch = useDispatch();
+
   const ingredients: TIngredient[] = useSelector(
     (state: RootState) => state.ingredients.items
   );
 
-  // ✅ заказы из ленты
   const feedOrders: TOrder[] = useSelector(
     (state: RootState) => state.feeds.orders
   );
 
-  // ✅ заказы из профиля (ты уже сделал slice profileOrders)
   const profileOrders: TOrder[] = useSelector(
     (state: RootState) => state.profileOrders.orders
   );
 
-  // ✅ находим нужный заказ
   const orderData = useMemo(() => {
     if (!orderNumber) return null;
 
@@ -38,14 +40,30 @@ export const OrderInfo: FC = () => {
     );
   }, [orderNumber, feedOrders, profileOrders]);
 
-  // если заказа нет в сторе — показываем загрузку
-  // (в идеале тут надо догружать по номеру через API, но пока ок)
-  if (!orderData) {
-    return <Preloader />;
-  }
+  useEffect(() => {
+    if (!orderNumber) return;
 
-  // ✅ готовим данные для UI
+    const isFeedOrder = location.pathname.startsWith('/feed/');
+    const isProfileOrder = location.pathname.startsWith('/profile/orders/');
+
+    if (isFeedOrder && feedOrders.length === 0) {
+      dispatch(fetchFeedsThunk());
+    }
+
+    if (isProfileOrder && profileOrders.length === 0) {
+      dispatch(fetchProfileOrdersThunk());
+    }
+  }, [
+    dispatch,
+    orderNumber,
+    location.pathname,
+    feedOrders.length,
+    profileOrders.length
+  ]);
+
   const orderInfo = useMemo(() => {
+    if (!orderData || ingredients.length === 0) return null;
+
     const date = new Date(orderData.createdAt);
 
     type TIngredientsWithCount = {
@@ -81,11 +99,22 @@ export const OrderInfo: FC = () => {
     };
   }, [orderData, ingredients]);
 
-  // ✅ если ингредиенты ещё не пришли — показываем прелоадер,
-  // но НЕ возвращаем orderInfo=null из-за "ingredients.length"
-  if (!ingredients.length) {
-    return <Preloader />;
-  }
+  if (!orderNumber) return <Preloader />;
 
-  return <OrderInfoUI orderInfo={orderInfo} />;
+  if (!orderData) return <Preloader />;
+
+  if (!ingredients.length) return <Preloader />;
+
+  if (!orderInfo) return <Preloader />;
+
+  return (
+    <div
+      style={{
+        maxWidth: 640,
+        margin: '120px auto 0'
+      }}
+    >
+      <OrderInfoUI orderInfo={orderInfo} />
+    </div>
+  );
 };

@@ -3,7 +3,7 @@ import type { TIngredient, TConstructorIngredient } from '@utils-types';
 
 type TConstructorState = {
   bun: TIngredient | null;
-  items: TConstructorIngredient[]; // начинки/соусы/и т.д.
+  items: TConstructorIngredient[];
 };
 
 const initialState: TConstructorState = {

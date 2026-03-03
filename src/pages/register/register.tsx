@@ -28,9 +28,7 @@ export const Register: FC = () => {
       .then(() => {
         navigate('/profile', { replace: true });
       })
-      .catch(() => {
-        // errorText уже лежит в store
-      });
+      .catch(() => {});
   };
 
   return (

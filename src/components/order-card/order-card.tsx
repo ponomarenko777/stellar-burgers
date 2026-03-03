@@ -13,7 +13,6 @@ const maxIngredients = 6;
 export const OrderCard: FC<OrderCardProps> = memo(({ order }) => {
   const location = useLocation();
 
-  // ✅ ингредиенты из стора
   const ingredients: TIngredient[] = useSelector(
     (state: RootState) => state.ingredients.items
   );
@@ -21,8 +20,6 @@ export const OrderCard: FC<OrderCardProps> = memo(({ order }) => {
   const orderInfo = useMemo(() => {
     const date = new Date(order.createdAt);
 
-    // ✅ если ингредиенты ещё не загрузились — всё равно возвращаем объект,
-    // чтобы карточка рендерилась и была кликабельной
     if (!ingredients.length) {
       return {
         ...order,

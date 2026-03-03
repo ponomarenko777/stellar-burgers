@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 
 import '../../index.css';
@@ -30,7 +30,21 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const background = location.state?.background;
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    isFirstRender.current = false;
+  }, []);
+
+  const rawBackground = location.state?.background;
+
+  const background =
+    !isFirstRender.current &&
+    rawBackground &&
+    typeof rawBackground === 'object' &&
+    'pathname' in rawBackground &&
+    (rawBackground as any).pathname !== location.pathname
+      ? (rawBackground as any)
+      : undefined;
 
   useEffect(() => {
     dispatch(checkUserAuthThunk());
@@ -38,15 +52,32 @@ const App = () => {
   }, [dispatch]);
 
   const handleCloseModal = () => {
-    navigate(-1);
+    if (background) {
+      navigate(-1);
+      return;
+    }
+
+    if (location.pathname.startsWith('/profile/orders/')) {
+      navigate('/profile/orders', { replace: true });
+      return;
+    }
+
+    if (location.pathname.startsWith('/feed/')) {
+      navigate('/feed', { replace: true });
+      return;
+    }
+
+    navigate('/', { replace: true });
   };
 
   return (
     <div className={styles.app}>
       <AppHeader />
+
       <Routes location={background || location}>
         <Route path='/' element={<ConstructorPage />} />
         <Route path='/feed' element={<Feed />} />
+
         <Route
           path='/login'
           element={<ProtectedRoute onlyUnAuth element={<Login />} />}
@@ -97,7 +128,7 @@ const App = () => {
           <Route
             path='/feed/:number'
             element={
-              <Modal onClose={handleCloseModal} title='Детали заказа'>
+              <Modal onClose={handleCloseModal} title=''>
                 <OrderInfo />
               </Modal>
             }
@@ -108,7 +139,7 @@ const App = () => {
             element={
               <ProtectedRoute
                 element={
-                  <Modal onClose={handleCloseModal} title='Детали заказа'>
+                  <Modal onClose={handleCloseModal} title=''>
                     <OrderInfo />
                   </Modal>
                 }

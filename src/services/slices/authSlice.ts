@@ -71,10 +71,8 @@ export const checkUserAuthThunk = createAsyncThunk<TUser | null>(
   async () => {
     const token = getCookie('accessToken');
 
-    // если токена нет — пользователь не авторизован
     if (!token) return null;
 
-    // если есть — пробуем получить пользователя
     const res = await getUserApi();
     if (!res.success) return Promise.reject(res);
 
@@ -162,7 +160,7 @@ const authSlice = createSlice({
       .addCase(checkUserAuthThunk.fulfilled, (s, a) => {
         s.isLoading = false;
         s.isAuthChecked = true;
-        s.user = a.payload; // user или null
+        s.user = a.payload;
       })
       .addCase(checkUserAuthThunk.rejected, (s, a) => {
         s.isLoading = false;

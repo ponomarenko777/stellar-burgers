@@ -8,7 +8,6 @@ import { useSelector } from '../../services/store';
 import type { RootState } from '../../services/store';
 
 export const BurgerIngredients: FC = () => {
-  // ✅ берём ингредиенты из стора
   const ingredients = useSelector(
     (state: RootState) => state.ingredients.items
   );

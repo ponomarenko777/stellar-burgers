@@ -29,9 +29,7 @@ export const Login: FC = () => {
         const from = (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });
       })
-      .catch(() => {
-        // errorText уже лежит в store
-      });
+      .catch(() => {});
   };
 
   return (

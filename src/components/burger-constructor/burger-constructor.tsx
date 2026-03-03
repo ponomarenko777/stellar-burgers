@@ -51,7 +51,6 @@ export const BurgerConstructor: FC = () => {
 
     const bunId = bun._id;
 
-    // булка сверху + начинка + булка снизу
     const ingredientIds = [bunId, ...ingredients.map((i) => i._id), bunId];
 
     dispatch(createOrderThunk(ingredientIds));
@@ -59,7 +58,6 @@ export const BurgerConstructor: FC = () => {
 
   const closeOrderModal = () => {
     dispatch(clearOrderModalData());
-    dispatch(clearConstructor());
   };
 
   return (

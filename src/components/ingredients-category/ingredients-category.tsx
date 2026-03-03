@@ -10,13 +10,11 @@ export const IngredientsCategory = forwardRef<
   HTMLUListElement,
   TIngredientsCategoryProps
 >(({ title, titleRef, ingredients }, ref) => {
-  // ✅ берём конструктор из стора
   const bun = useSelector((s: RootState) => s.burgerConstructor.bun);
   const constructorItems = useSelector(
     (s: RootState) => s.burgerConstructor.items
   );
 
-  // ✅ считаем количество каждого ингредиента
   const ingredientsCounters = useMemo(() => {
     const counters: Record<string, number> = {};
 
@@ -24,7 +22,6 @@ export const IngredientsCategory = forwardRef<
       counters[ingredient._id] = (counters[ingredient._id] || 0) + 1;
     });
 
-    // булка считается два раза
     if (bun) {
       counters[bun._id] = 2;
     }

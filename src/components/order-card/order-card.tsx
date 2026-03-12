@@ -1,8 +1,11 @@
 import { FC, memo, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import { useSelector } from '../../services/store';
+import type { RootState } from '../../services/store';
+
 import { OrderCardProps } from './type';
-import { TIngredient } from '@utils-types';
+import type { TIngredient } from '@utils-types';
 import { OrderCardUI } from '../ui/order-card';
 
 const maxIngredients = 6;
@@ -10,16 +13,28 @@ const maxIngredients = 6;
 export const OrderCard: FC<OrderCardProps> = memo(({ order }) => {
   const location = useLocation();
 
-  /** TODO: взять переменную из стора */
-  const ingredients: TIngredient[] = [];
+  const ingredients: TIngredient[] = useSelector(
+    (state: RootState) => state.ingredients.items
+  );
 
   const orderInfo = useMemo(() => {
-    if (!ingredients.length) return null;
+    const date = new Date(order.createdAt);
+
+    if (!ingredients.length) {
+      return {
+        ...order,
+        ingredientsInfo: [] as TIngredient[],
+        ingredientsToShow: [] as TIngredient[],
+        remains: 0,
+        total: 0,
+        date
+      };
+    }
 
     const ingredientsInfo = order.ingredients.reduce(
-      (acc: TIngredient[], item: string) => {
-        const ingredient = ingredients.find((ing) => ing._id === item);
-        if (ingredient) return [...acc, ingredient];
+      (acc: TIngredient[], id: string) => {
+        const ingredient = ingredients.find((ing) => ing._id === id);
+        if (ingredient) acc.push(ingredient);
         return acc;
       },
       []
@@ -34,7 +49,6 @@ export const OrderCard: FC<OrderCardProps> = memo(({ order }) => {
         ? ingredientsInfo.length - maxIngredients
         : 0;
 
-    const date = new Date(order.createdAt);
     return {
       ...order,
       ingredientsInfo,
@@ -44,8 +58,6 @@ export const OrderCard: FC<OrderCardProps> = memo(({ order }) => {
       date
     };
   }, [order, ingredients]);
-
-  if (!orderInfo) return null;
 
   return (
     <OrderCardUI

@@ -1,25 +1,68 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
-import { TIngredient } from '@utils-types';
+
+import type { TIngredient, TOrder } from '@utils-types';
+import { useDispatch, useSelector } from '../../services/store';
+import type { RootState } from '../../services/store';
+
+import { fetchFeedsThunk } from '@slices/feedsSlice';
+import { fetchProfileOrdersThunk } from '@slices/profileOrdersSlice';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const { number } = useParams();
+  const orderNumber = Number(number);
 
-  const ingredients: TIngredient[] = [];
+  const location = useLocation();
+  const dispatch = useDispatch();
 
-  /* Готовим данные для отображения */
+  const ingredients: TIngredient[] = useSelector(
+    (state: RootState) => state.ingredients.items
+  );
+
+  const feedOrders: TOrder[] = useSelector(
+    (state: RootState) => state.feeds.orders
+  );
+
+  const profileOrders: TOrder[] = useSelector(
+    (state: RootState) => state.profileOrders.orders
+  );
+
+  const orderData = useMemo(() => {
+    if (!orderNumber) return null;
+
+    return (
+      feedOrders.find((o) => o.number === orderNumber) ||
+      profileOrders.find((o) => o.number === orderNumber) ||
+      null
+    );
+  }, [orderNumber, feedOrders, profileOrders]);
+
+  useEffect(() => {
+    if (!orderNumber) return;
+
+    const isFeedOrder = location.pathname.startsWith('/feed/');
+    const isProfileOrder = location.pathname.startsWith('/profile/orders/');
+
+    if (isFeedOrder && feedOrders.length === 0) {
+      dispatch(fetchFeedsThunk());
+    }
+
+    if (isProfileOrder && profileOrders.length === 0) {
+      dispatch(fetchProfileOrdersThunk());
+    }
+  }, [
+    dispatch,
+    orderNumber,
+    location.pathname,
+    feedOrders.length,
+    profileOrders.length
+  ]);
+
   const orderInfo = useMemo(() => {
-    if (!orderData || !ingredients.length) return null;
+    if (!orderData || ingredients.length === 0) return null;
 
     const date = new Date(orderData.createdAt);
 
@@ -28,17 +71,14 @@ export const OrderInfo: FC = () => {
     };
 
     const ingredientsInfo = orderData.ingredients.reduce(
-      (acc: TIngredientsWithCount, item) => {
-        if (!acc[item]) {
-          const ingredient = ingredients.find((ing) => ing._id === item);
-          if (ingredient) {
-            acc[item] = {
-              ...ingredient,
-              count: 1
-            };
-          }
+      (acc: TIngredientsWithCount, id) => {
+        const ingredient = ingredients.find((ing) => ing._id === id);
+        if (!ingredient) return acc;
+
+        if (!acc[id]) {
+          acc[id] = { ...ingredient, count: 1 };
         } else {
-          acc[item].count++;
+          acc[id].count += 1;
         }
 
         return acc;
@@ -59,9 +99,22 @@ export const OrderInfo: FC = () => {
     };
   }, [orderData, ingredients]);
 
-  if (!orderInfo) {
-    return <Preloader />;
-  }
+  if (!orderNumber) return <Preloader />;
 
-  return <OrderInfoUI orderInfo={orderInfo} />;
+  if (!orderData) return <Preloader />;
+
+  if (!ingredients.length) return <Preloader />;
+
+  if (!orderInfo) return <Preloader />;
+
+  return (
+    <div
+      style={{
+        maxWidth: 640,
+        margin: '120px auto 0'
+      }}
+    >
+      <OrderInfoUI orderInfo={orderInfo} />
+    </div>
+  );
 };

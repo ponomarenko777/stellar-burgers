@@ -1,3 +1,7 @@
+const BUN_NAME = 'Краторная булка N-200i';
+const MAIN_NAME = 'Биокотлета из марсианской Магнолии';
+const ADD_BUTTON_TEXT = 'Добавить';
+
 describe('Burger constructor page', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/api/ingredients', {
@@ -25,15 +29,12 @@ describe('Burger constructor page', () => {
   });
 
   it('adds ingredients to constructor', () => {
-    cy.contains('Краторная булка N-200i').parent().contains('Добавить').click();
+    cy.contains(BUN_NAME).parent().contains(ADD_BUTTON_TEXT).click();
 
-    cy.contains('Биокотлета из марсианской Магнолии')
-      .parent()
-      .contains('Добавить')
-      .click();
+    cy.contains(MAIN_NAME).parent().contains(ADD_BUTTON_TEXT).click();
 
-    cy.contains('Краторная булка N-200i').should('exist');
-    cy.contains('Биокотлета из марсианской Магнолии').should('exist');
+    cy.contains(BUN_NAME).should('exist');
+    cy.contains(MAIN_NAME).should('exist');
   });
 
   it('opens ingredient modal and shows correct ingredient data', () => {
@@ -48,12 +49,9 @@ describe('Burger constructor page', () => {
   });
 
   it('creates order and clears constructor', () => {
-    cy.contains('Краторная булка N-200i').parent().contains('Добавить').click();
+    cy.contains(BUN_NAME).parent().contains(ADD_BUTTON_TEXT).click();
 
-    cy.contains('Биокотлета из марсианской Магнолии')
-      .parent()
-      .contains('Добавить')
-      .click();
+    cy.contains(MAIN_NAME).parent().contains(ADD_BUTTON_TEXT).click();
 
     cy.contains('Оформить заказ').click();
 
